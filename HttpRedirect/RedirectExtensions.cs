@@ -65,7 +65,7 @@ namespace HttpRedirect
                     uriBuilder.Query = context.Request.QueryString.Value;
                     return uriBuilder.Uri;
                 },
-                context => !context.WebSockets.IsWebSocketRequest
+                filter
             );
 
         public static IServiceCollection AddRedirect(
@@ -82,19 +82,15 @@ namespace HttpRedirect
                     options.RedirectUrl = redirectUrl;
                 });
             services
-                .ConfigureHttpClientDefaults(builder =>
-                {
-                    builder.ConfigureHttpClient(client =>
+                .AddHttpClient("redirect_httpClient")
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                    new HttpClientHandler
                     {
-                        var handler = new HttpClientHandler();
-                        handler.ServerCertificateCustomValidationCallback = delegate
+                        ServerCertificateCustomValidationCallback = delegate
                         {
                             return true;
-                        };
-                        client = new HttpClient(handler);
+                        },
                     });
-                })
-                .AddHttpClient("redirect_httpClient");
             services.AddTransient<RedirectMiddleware>();
             return services;
         }
